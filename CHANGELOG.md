@@ -1,5 +1,11 @@
 ## 1.0.0 (2025-12-25)
 
+### Features
+
+* initial release of Ubuntu systemd Docker container ([81e33ba](https://github.com/zuptalo/docker-ubuntu-systemd/commit/81e33ba6589c3b3bf737c01a4eae0f143ab4d08e))
+
+## 1.0.0 (2025-12-25)
+
 ### ⚠ BREAKING CHANGES
 
 * Contributors must now use conventional commit format
