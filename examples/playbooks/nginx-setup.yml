@@ -1,0 +1,58 @@
+---
+- name: Install and configure Nginx web server
+  hosts: test_servers
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create custom index.html
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Ansible Test</title>
+          </head>
+          <body>
+              <h1>Successfully configured by Ansible!</h1>
+              <p>This page was deployed using Ansible to test the configuration.</p>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Ensure Nginx is started and enabled
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Check Nginx status
+      command: systemctl status nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: Display Nginx status
+      debug:
+        var: nginx_status.stdout_lines
+
+    - name: Test Nginx is responding
+      uri:
+        url: http://localhost
+        return_content: yes
+      register: webpage
+
+    - name: Show webpage content
+      debug:
+        msg: "Nginx is serving content successfully"

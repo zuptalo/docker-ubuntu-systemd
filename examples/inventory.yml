@@ -1,0 +1,10 @@
+all:
+  children:
+    test_servers:
+      hosts:
+        ubuntu-test:
+          ansible_host: localhost
+          ansible_port: 2222
+          ansible_user: ubuntu
+          ansible_password: ubuntu
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'

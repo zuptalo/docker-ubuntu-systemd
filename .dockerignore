@@ -1,0 +1,59 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# Docker
+compose.yaml
+compose.dev.yml
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+*.md
+CONTRIBUTING.md
+CHANGELOG.md
+LICENSE
+
+# Examples
+examples/
+
+# Node.js
+node_modules/
+package.json
+package-lock.json
+
+# CI/CD
+.releaserc.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+*.iml
+.claude
+Makefile
+run.sh

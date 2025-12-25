@@ -1,0 +1,42 @@
+services:
+  # Ubuntu systemd container from GitHub Container Registry
+  ubuntu-test:
+    image: ghcr.io/${GITHUB_REPOSITORY:-zuptalo/docker-ubuntu-systemd}:latest
+    container_name: ubuntu-systemd-test
+    hostname: ubuntu-test
+    privileged: true
+    tmpfs:
+      - /tmp:exec
+      - /run
+      - /run/lock
+    ports:
+      - "2222:22"
+    networks:
+      - ansible-test
+    restart: unless-stopped
+
+  # Ansible control node for running playbooks
+  ansible-controller:
+    image: cytopia/ansible:latest
+    container_name: ansible-controller
+    working_dir: /ansible
+    volumes:
+      - ./playbooks:/ansible/playbooks:ro
+      - ./inventory.yml:/ansible/inventory.yml:ro
+    networks:
+      - ansible-test
+    depends_on:
+      - ubuntu-test
+    command: >
+      sh -c "
+        echo 'Waiting for SSH to be ready...' &&
+        sleep 10 &&
+        echo 'Testing connectivity...' &&
+        ansible all -i inventory.yml -m ping &&
+        echo 'Running example playbook...' &&
+        ansible-playbook -i inventory.yml playbooks/nginx-setup.yml
+      "
+
+networks:
+  ansible-test:
+    driver: bridge

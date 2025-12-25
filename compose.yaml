@@ -1,0 +1,25 @@
+# Production/Quick Start Compose File
+# This file uses the pre-built image from GitHub Container Registry.
+# For local development and building from source, see compose.dev.yml
+
+services:
+  ubuntu-server:
+    image: ghcr.io/zuptalo/docker-ubuntu-systemd:latest
+    container_name: ubuntu-systemd-test
+    hostname: ubuntu-test
+    privileged: true
+    pull_policy: always  # Always pull the latest image
+    # Required for systemd to work properly
+    tmpfs:
+      - /tmp:exec
+      - /run
+      - /run/lock
+    ports:
+      - "2222:22"  # SSH port mapped to host:2222
+    networks:
+      - ansible-test-network
+    restart: unless-stopped
+
+networks:
+  ansible-test-network:
+    driver: bridge

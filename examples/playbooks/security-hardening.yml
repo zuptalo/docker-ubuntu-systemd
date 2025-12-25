@@ -1,0 +1,100 @@
+---
+- name: Basic security hardening
+  hosts: test_servers
+  become: yes
+
+  tasks:
+    - name: Update all packages
+      apt:
+        upgrade: dist
+        update_cache: yes
+
+    - name: Install security packages
+      apt:
+        name:
+          - ufw
+          - fail2ban
+          - unattended-upgrades
+        state: present
+
+    - name: Configure unattended upgrades
+      copy:
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Download-Upgradeable-Packages "1";
+          APT::Periodic::AutocleanInterval "7";
+          APT::Periodic::Unattended-Upgrade "1";
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: '0644'
+
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+      notify: restart ssh
+
+    - name: Disable password authentication (use with caution)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+      notify: restart ssh
+      tags: ['never', 'disable-password-auth']
+
+    - name: Set SSH idle timeout
+      blockinfile:
+        path: /etc/ssh/sshd_config
+        block: |
+          ClientAliveInterval 300
+          ClientAliveCountMax 2
+      notify: restart ssh
+
+    - name: Configure fail2ban for SSH
+      copy:
+        content: |
+          [sshd]
+          enabled = true
+          port = ssh
+          filter = sshd
+          logpath = /var/log/auth.log
+          maxretry = 3
+          bantime = 3600
+        dest: /etc/fail2ban/jail.d/sshd.conf
+        mode: '0644'
+      notify: restart fail2ban
+
+    - name: Ensure fail2ban is started and enabled
+      systemd:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    - name: Set proper file permissions on sensitive files
+      file:
+        path: "{{ item }}"
+        mode: '0600'
+      loop:
+        - /etc/ssh/sshd_config
+        - /etc/sudoers
+
+    - name: Show security status
+      debug:
+        msg:
+          - "Security hardening applied"
+          - "fail2ban is protecting SSH"
+          - "Unattended upgrades configured"
+          - "SSH security settings updated"
+
+  handlers:
+    - name: restart ssh
+      systemd:
+        name: ssh
+        state: restarted
+
+    - name: restart fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted

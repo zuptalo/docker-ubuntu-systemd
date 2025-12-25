@@ -1,0 +1,103 @@
+---
+- name: Create and manage a custom systemd service
+  hosts: test_servers
+  become: yes
+
+  tasks:
+    - name: Create application directory
+      file:
+        path: /opt/hello-app
+        state: directory
+        mode: '0755'
+
+    - name: Create a simple application script
+      copy:
+        content: |
+          #!/bin/bash
+          while true; do
+            echo "$(date): Hello from custom service"
+            sleep 10
+          done
+        dest: /opt/hello-app/hello.sh
+        mode: '0755'
+
+    - name: Create systemd service file
+      copy:
+        content: |
+          [Unit]
+          Description=Hello Application Service
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/opt/hello-app
+          ExecStart=/opt/hello-app/hello.sh
+          Restart=on-failure
+          RestartSec=5s
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/hello-app.service
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start hello-app service
+      systemd:
+        name: hello-app
+        enabled: yes
+        state: started
+
+    - name: Wait for service to run
+      pause:
+        seconds: 3
+
+    - name: Check service status
+      command: systemctl status hello-app
+      register: service_status
+      changed_when: false
+
+    - name: Display service status
+      debug:
+        var: service_status.stdout_lines
+
+    - name: Check service logs
+      command: journalctl -u hello-app -n 5 --no-pager
+      register: service_logs
+      changed_when: false
+
+    - name: Display service logs
+      debug:
+        var: service_logs.stdout_lines
+
+    - name: Create systemd timer for periodic task
+      copy:
+        content: |
+          [Unit]
+          Description=Hello Timer
+
+          [Timer]
+          OnBootSec=1min
+          OnUnitActiveSec=5min
+
+          [Install]
+          WantedBy=timers.target
+        dest: /etc/systemd/system/hello-timer.timer
+        mode: '0644'
+
+    - name: Reload systemd after adding timer
+      systemd:
+        daemon_reload: yes
+
+    - name: Show all custom units
+      command: systemctl list-units --all --type=service --no-pager | grep hello
+      register: custom_units
+      changed_when: false
+      failed_when: false
+
+    - name: Display custom units
+      debug:
+        var: custom_units.stdout_lines

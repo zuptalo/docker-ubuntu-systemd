@@ -1,0 +1,41 @@
+services:
+  ubuntu-server:
+    build:
+      context: .
+      tags:
+        - docker-ubuntu-systemd:latest
+    container_name: ubuntu-systemd-test
+    hostname: ubuntu-test
+    privileged: true
+    # Required for systemd to work properly
+    tmpfs:
+      - /tmp:exec
+      - /run
+      - /run/lock
+    ports:
+      - "2222:22"  # SSH port mapped to host:2222
+    networks:
+      - ansible-test-network
+    restart: unless-stopped
+    # Optional: Add more test servers
+    # You can scale this or add more services for multi-host testing
+
+  # Example: Add a second server for multi-host testing
+  # ubuntu-server-2:
+  #   build: .
+  #   container_name: ubuntu-systemd-test-2
+  #   hostname: ubuntu-test-2
+  #   privileged: true
+  #   tmpfs:
+  #     - /tmp:exec
+  #     - /run
+  #     - /run/lock
+  #   ports:
+  #     - "2223:22"
+  #   networks:
+  #     - ansible-test-network
+  #   restart: unless-stopped
+
+networks:
+  ansible-test-network:
+    driver: bridge
